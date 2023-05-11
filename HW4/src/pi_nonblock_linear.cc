@@ -4,7 +4,7 @@
 #include <time.h>
 #include <sys/types.h>
 #include <unistd.h>
-
+void monteCarlo(int rank, long long int* side_sum, int number_toss);
 int main(int argc, char **argv)
 {
     // --- DON'T TOUCH ---
@@ -27,23 +27,27 @@ int main(int argc, char **argv)
         MPI_Request request;
         long long int side_sum = 0;
         monteCarlo(world_rank, &side_sum, tosses/ world_size);
-        //printf("The rank %d send the sum of toss %lld\n", world_rank, side_sum);
+        printf("The rank %d send the sum of toss %lld\n", world_rank, side_sum);
         MPI_Isend(&side_sum, 1, MPI_LONG, 0, 0, MPI_COMM_WORLD, &request);
         // TODO: handle workers
-        MPI_Wait(request, MPI_STATUS_IGNORE);
+        MPI_Wait(&request, MPI_STATUS_IGNORE);
     }
     else if (world_rank == 0)
     {
+        long long int* sample = (long long int*)malloc((world_size - 1) * sizeof(long long int));
         monteCarlo(world_size, &number_in_circle, tosses / world_size);
         // TODO: non-blocking MPI communication.
         // Use MPI_Irecv, MPI_Wait or MPI_Waitall.
-        MPI_Request requests = new MPI_Request[world_size-1];
+        MPI_Request* requests = (MPI_Request*)malloc((world_size-1)*sizeof(MPI_Request));
         for (source = 1; source < world_size; source++) {
-            MPI_Irecv(&sample, 1, MPI_LONG, source, 0, MPI_COMM_WORLD,
-                &request[source-1]);
-            number_in_circle += sample;
+            MPI_Irecv(&sample[source-1], 1, MPI_LONG, source, 0, MPI_COMM_WORLD,
+                &requests[source-1]);
         }
-        MPI_Waitall(world_size-1,&requests, MPI_STATUS_IGNORE);
+        MPI_Waitall(world_size-1,requests, MPI_STATUS_IGNORE);
+
+        for (int i = 0; i < world_size-1; i++) {
+            number_in_circle += sample[i];
+        }
     }
 
     if (world_rank == 0)

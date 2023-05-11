@@ -27,7 +27,7 @@ int main(int argc, char **argv)
     {
         long long int side_sum = 0;
         monteCarlo(world_rank, &side_sum, tosses/ world_size);
-        MPI_BSend(&side_sum, 1, MPI_LONG, 0, 0, MPI_COMM_WORLD);
+        MPI_Send(&side_sum, 1, MPI_LONG, 0, 0, MPI_COMM_WORLD);
     }
     else if (world_rank == 0)
     {

@@ -31,7 +31,7 @@ int main(int argc, char **argv)
         //printf("The %d Launch!!!\n", world_rank);
         long long int side_sum = 0;
         monteCarlo(world_rank, &side_sum, tosses / world_size);
-        MPI_BSend(&side_sum, 1, MPI_LONG, world_rank-1, 0, MPI_COMM_WORLD);
+        MPI_Send(&side_sum, 1, MPI_LONG, world_rank-1, 0, MPI_COMM_WORLD);
     }
     else if (world_rank % 2 == 0 && world_rank != 0) {
         //printf("The %d Launch!!!\n", world_rank);
@@ -50,7 +50,7 @@ int main(int argc, char **argv)
             side_sum += sample;
         }
         //printf("The Send %d,Rank:%d!!!\n", recvTarget, world_rank);
-        MPI_BSend(&side_sum, 1, MPI_LONG, world_rank- pow(2,numsDict[world_rank]), 0, MPI_COMM_WORLD);
+        MPI_Send(&side_sum, 1, MPI_LONG, world_rank- pow(2,numsDict[world_rank]), 0, MPI_COMM_WORLD);
     }
     else
     {

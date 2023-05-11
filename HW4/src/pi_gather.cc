@@ -22,18 +22,18 @@ int main(int argc, char **argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
     // TODO: MPI init
     long long int send;
-    monteCarlo(world_rank+i, &send, tosses/ world_size);
+    monteCarlo(world_rank, &send, tosses/ world_size);
+    long long int* receive = NULL;
     if (world_rank == 0){
-        long long int* receive = (long long int*)malloc(world_size*sizeof(long long int));
+        receive = (long long int*)malloc(world_size*sizeof(long long int));
     }
     // TODO: use MPI_Gather
-    MPI_Gather(&send,world_size,MPI_Init,receive,world_size,MPI_Init,0,MPI_COMM_WORLD);
+    MPI_Gather(&send, 1, MPI_LONG, receive, 1, MPI_LONG, 0, MPI_COMM_WORLD);
     if (world_rank == 0)
     {
-        monteCarlo(world_size, &number_in_circle, tosses / world_size);
-        for(int i =0 ; i<world_size;i++){
-            number_in_circle+=receive[i];
-        }   
+        for (int i = 0; i < world_size; i++) {
+            number_in_circle += receive[i];
+        }
         // TODO: PI result
         double pi_result = 4 * number_in_circle / (double)tosses;
         // --- DON'T TOUCH ---

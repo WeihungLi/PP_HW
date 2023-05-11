@@ -21,7 +21,7 @@ int main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
     // TODO: MPI init
-    int send;
+    long long int send;
     if (world_rank == 0){
         monteCarlo(world_size, &send, tosses / world_size);
     }
@@ -29,7 +29,7 @@ int main(int argc, char **argv)
         monteCarlo(world_rank, &send, tosses/ world_size);
     }
     // TODO: use MPI_Reduce
-    MPI_Reduce(send,&number_in_circle,world_size,MPI_LONG,MPI_SUM,0,MPI_COMM_WORLD);
+    MPI_Reduce(&send,&number_in_circle,1,MPI_LONG,MPI_SUM,0,MPI_COMM_WORLD);
     
     if (world_rank == 0)
     {
