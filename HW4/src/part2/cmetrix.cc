@@ -11,41 +11,46 @@
 // b_mat_ptr: pointer to matrix b (b should be a continuous memory space for placing m * l elements of int)
 void construct_matrices(int* n_ptr, int* m_ptr, int* l_ptr,
     int** a_mat_ptr, int** b_mat_ptr) {
-    int a[3];
+    int rank, size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    if (rank==0){
     int i, j;
-    FILE* fp = fopen("/home/.grade/HW4/data-set/data1_1", "r"); //開啟檔案
-    if (fp == NULL)
-    {
-        printf("no file!!\n");
-        return -1;
-    }
+
     for (i = 0; i < 3; i++)
     {
         if (i == 0) {
-            fscanf(fp, "%d", n_ptr);/*每次讀取一個數，fscanf函式遇到空格或者換行結束*/
+            scanf("%d", n_ptr);
+            printf("%d\n",*n_ptr);
         }
         else if (i == 1) {
-            fscanf(fp, "%d", m_ptr);/*每次讀取一個數，fscanf函式遇到空格或者換行結束*/
+            scanf("%d", m_ptr);
+            printf("%d\n",*m_ptr);
         }
         else {
-            fscanf(fp, "%d", l_ptr);/*每次讀取一個數，fscanf函式遇到空格或者換行結束*/
+            scanf("%d", l_ptr);
+            printf("%d\n",*l_ptr);
+        }
+    }
+    int* ma = (int*)malloc(a[0]* a[1] * sizeof(int));
+    for (i = 0; i < *n_ptr; i++)
+    {
+        for (j = 0;j<*m_ptr;j++){
+            scanf("%d", &ma[i*j+j]);
         }
     }
 
-    int* ma = (int**)malloc(a[0]* a[1] * sizeof(int*));
-    for (i = 0; i < a[0] * a[1]; i++)
+    int* mb = (int*)malloc(a[1]* a[2] * sizeof(int));
+    for (i = 0; i < *m_ptr; i++)
     {
-            fscanf(fp, "%d", &ma[i]);/*每次讀取一個數，fscanf函式遇到空格或者換行結束*/
+        for (j = 0;j<*l_ptr;j++){
+            scanf("%d", &mb[i*j+j]);
+        }
     }
-
-    int* mb = (int**)malloc(a[1]* a[2] * sizeof(int*));
-    for (i = 0; i < a[1] * a[2]; i++)
-    {
-            fscanf(fp, "%d", &mb[i]);/*每次讀取一個數，fscanf函式遇到空格或者換行結束*/
+    **a_mat_ptr = &ma;
+    **b_mat_ptr = &mb;
+    //printf("End!!!! ma:%d, a_mat_ptr:%d\n",ma[0],*a_mat_ptr[0]);
     }
-    fclose(fp);
-    **a_mat_ptr = ma;
-    **b_mat_ptr = mb;
 }
 
 // Just matrix multiplication (your should output the result in this function)
@@ -63,26 +68,36 @@ void matrix_multiply(const int n, const int m, const int l,
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
-
+    int* A = (int*) a_mat;
+    int* B = (int*) b_mat;
     int* C = (int*)calloc((n * l),sizeof(int));
 
-    int local_n = N / size;
+    int local_n = n / size;
     int* local_A = (int*)malloc(local_n * m * sizeof(int));
-    MPI_Scatter(a_mat, local_n * m, MPI_INT, local_A, local_n * m, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Scatter(A, local_n * m, MPI_INT, local_A, local_n * m, MPI_INT, 0, MPI_COMM_WORLD);
     // Broadcast matrix B to all processes
-    MPI_Bcast(b_mat, m * l, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(B, m * l, MPI_INT, 0, MPI_COMM_WORLD);
 
 
     for (i = 0; i < local_n; i++) {
         for (j = 0; j < l; j++) {
             for (k = 0; k < m; k++) {
-                C[i * l + j] += local_A[i * m + k] * b_mat[k * l + j];
+                C[i * l + j] += local_A[i * m + k] * B[k * l + j];
             }
         }
     }
 
     MPI_Gather(C, local_n * l, MPI_INT, C, local_n * l, MPI_INT, 0, MPI_COMM_WORLD);
 
+    FILE *fp;
+    fp = fopen("output.txt", "w");
+    for (i = 0; i < n; i++) {
+        for(j = 0;j<l;j++){
+            fprintf(fp, "%d", C[i*j+j]);  // Write integer to file
+        }
+        fprintf(fp, "\n");
+    }
+    fclose(fp);  // Close file
 
     free(C);
     free(local_A);
